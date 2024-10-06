@@ -1,14 +1,12 @@
-import React from 'react'
+import React from "react";
+import ConversationContainer from "@/components/shared/conversation/ConversationContainer";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type Props = {}
-
+type Props = {};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ConversationPage = (props: Props) => {
-  return (
-    <div>ConversationPage</div>
-  )
-}
+  return <ConversationContainer>ConversationPage</ConversationContainer>;
+};
 
-export default ConversationPage
+export default ConversationPage;

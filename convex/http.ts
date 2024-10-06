@@ -1,72 +1,71 @@
-import { httpRouter } from "convex/server";
-import { httpAction } from "./_generated/server";
-import { Webhook } from "svix";
-import { internal } from "./_generated/api";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { httpRouter } from "convex/server"; // Importing httpRouter to define HTTP routes
+import { httpAction } from "./_generated/server"; // Importing httpAction to define HTTP actions
+import { Webhook } from "svix"; // Importing Webhook from svix for webhook verification
+import { internal } from "./_generated/api"; // Importing internal API for database operations
+import { WebhookEvent } from "@clerk/nextjs/server"; // Importing WebhookEvent type from Clerk
 
 const validatePayload = async (
   req: Request
 ): Promise<WebhookEvent | undefined> => {
-  const payload = await req.text()
+  const payload = await req.text(); // Extract the payload from the request body
   const svixHeaders = {
-    'svix-id': req.headers.get('svix-id')!,
-    'svix-timestamp': req.headers.get('svix-timestamp')!,
-    'svix-signature': req.headers.get('svix-signature')!,
-  }
+    'svix-id': req.headers.get('svix-id')!, // Get 'svix-id' header
+    'svix-timestamp': req.headers.get('svix-timestamp')!, // Get 'svix-timestamp' header
+    'svix-signature': req.headers.get('svix-signature')!, // Get 'svix-signature' header
+  };
 
-  const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '')
-
+  const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET || ''); // Initialize Webhook with secret
 
   try {
-    const event = webhook.verify(payload, svixHeaders) as WebhookEvent
-    return event
+    const event = webhook.verify(payload, svixHeaders) as WebhookEvent; // Verify the payload and headers
+    return event; // Return the verified event
   } catch (error) {
-    console.error(error)
-    return 
+    console.error(error); // Log any verification errors
+    return; // Return undefined if verification fails
   }
-}
+};
 
 const handleClerkWebhook = httpAction(
   async (ctx, req) => {
-  const event = await validatePayload(req)
+    const event = await validatePayload(req); // Validate the incoming request payload
 
-  if (!event) {
-    return new Response('Invalid payload', { status: 400 })
-  }
+    if (!event) {
+      return new Response('Invalid payload', { status: 400 }); // Respond with 400 if payload is invalid
+    }
 
-  switch (event.type) {
-    case 'user.created':
-      const user = await ctx.runQuery(internal.user
-        .get, {
+    switch (event.type) {
+      case 'user.created':
+        const user = await ctx.runQuery(internal.user.get, {
           clerkId: event.data.id
-        })
+        });
         
         if (user) {
-          console.log(`Updating user ${event.data.id} with: ${event.data}`)
+          console.log(`Updating user ${event.data.id} with: ${event.data}`); // Log user update
         }
-    case 'user.updated':
-      console.log('Creating/updating user', event.data.id)
-      await ctx.runMutation(internal.user.create, {
-        username: `${event.data.first_name} ${event.data.last_name}`,
-        imageUrl: event.data.image_url,
-        clerkId: event.data.id,
-        email: event.data.email_addresses[0].email_address
-      })
-      break;
-    default: {
-      console.log('Clerk webhook event not supported', event.type)
+        // Note: Missing 'break;' here, which may cause fall-through to 'user.updated'
+      case 'user.updated':
+        console.log('Creating/updating user', event.data.id); // Log user creation/update
+        await ctx.runMutation(internal.user.create, {
+          username: `${event.data.first_name} ${event.data.last_name}`,
+          imageUrl: event.data.image_url,
+          clerkId: event.data.id,
+          email: event.data.email_addresses[0].email_address
+        });
+        break;
+      default: {
+        console.log('Clerk webhook event not supported', event.type); // Log unsupported event types
+      }
     }
+    return new Response(null, { status: 200 }); // Respond with 200 OK
   }
-  return new Response(null, { status: 200 })
-})
+);
 
-
-const http = httpRouter();
+const http = httpRouter(); // Initialize HTTP router
 
 http.route({
-  path: '/clerk-users-webhook',
-  method: 'POST',
-  handler: handleClerkWebhook
-})
+  path: '/clerk-users-webhook', // Define the path for the webhook
+  method: 'POST', // Define the HTTP method
+  handler: handleClerkWebhook // Assign the handler function
+});
 
-export default http
+export default http; // Export the HTTP router

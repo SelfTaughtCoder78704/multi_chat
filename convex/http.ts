@@ -35,21 +35,10 @@ const handleClerkWebhook = httpAction(
 
     switch (event.type) {
       case 'user.created':
-        const user = await ctx.runQuery(internal.user.get, {
-          clerkId: event.data.id
-        });
-        
-        if (user) {
-          console.log(`Updating user ${event.data.id} with: ${event.data}`); // Log user update
-        }
-        // Note: Missing 'break;' here, which may cause fall-through to 'user.updated'
-      case 'user.updated':
+      case 'user.updated': // Combine 'user.created' and 'user.updated' cases
         console.log('Creating/updating user', event.data.id); // Log user creation/update
-        await ctx.runMutation(internal.user.create, {
-          username: `${event.data.first_name} ${event.data.last_name}`,
-          imageUrl: event.data.image_url,
-          clerkId: event.data.id,
-          email: event.data.email_addresses[0].email_address
+        await ctx.runMutation(internal.user.updateOrCreateUser, {
+          clerkUser: event.data
         });
         break;
       default: {

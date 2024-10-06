@@ -1,6 +1,7 @@
 import React from "react";
 import ItemList from "@/components/shared/items-list/ItemList";
 import ConversationFallback from "@/components/shared/conversation/ConversationFallback";
+import AddFriendDialog from "./_components/AddFriendDialog";
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type Props = {};
 
@@ -8,7 +9,7 @@ type Props = {};
 const FriendsPage = (props: Props) => {
   return (
     <>
-      <ItemList title="Friends">FriendsPage</ItemList>
+      <ItemList title="Friends" action={<AddFriendDialog />}>FriendsPage</ItemList>
       <ConversationFallback />
     </>
   );

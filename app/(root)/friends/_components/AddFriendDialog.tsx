@@ -1,8 +1,5 @@
 "use client";
-import React from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import React, {  useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,50 +16,59 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useMutationState } from "@/hooks/useMutationState";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
+import { useQuery } from "convex/react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Define a type for the user object
+type User = {
+  clerkId: string;
+  email: string;
+  username: string;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type Props = {};
 
-const addFriendForm = z.object({
-  email: z
-    .string()
-    .min(1, { message: "Field cannot be empty" })
-    .email({ message: "Enter a valid email address" }),
-});
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AddFriendDialog = (props: Props) => {
-  const { mutate: createRequest, pending } = useMutationState(api.request.create);
+  const { mutate: createRequest, pending } = useMutationState(
+    api.request.create
+  );
+  const [selectedUser, setSelectedUser] = useState("");
 
-  const form = useForm<z.infer<typeof addFriendForm>>({
-    resolver: zodResolver(addFriendForm),
-    defaultValues: {
-      email: "",
-    },
-  });
+  // Use the useQuery hook to fetch users
+  const users = useQuery(api.user.listAllUsers) || [];
 
-  const handleSubmit = async (values: z.infer<typeof addFriendForm>) => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!selectedUser) {
+      toast.error("Please select a user");
+      return;
+    }
+
     await createRequest({
-      email: values.email,
-    }).then(() => {
-      form.reset();
-      toast.success("Friend request sent");
-    }).catch((err) => {
-      toast.error(err instanceof ConvexError ? err.data : "Unexpected error");
-    });
+      email: selectedUser,
+    })
+      .then(() => {
+        setSelectedUser("");
+        toast.success("Friend request sent");
+      })
+      .catch((err) => {
+        toast.error(err instanceof ConvexError ? err.data : "Unexpected error");
+      });
   };
 
   return (
@@ -87,29 +93,29 @@ const AddFriendDialog = (props: Props) => {
             Send a friend request to connect with someone else.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-8"
-          >
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button disabled={pending} type="submit">Send</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div>
+            <label htmlFor="user-select">Select a user:</label>
+            <Select onValueChange={setSelectedUser}>
+              <SelectTrigger className="w-full mt-2 p-2 border rounded">
+                <SelectValue placeholder="Select a user" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Users</SelectLabel>
+                  {users.map((user: User) => (
+                    <SelectItem key={user.clerkId} value={user.email}>
+                      {user.username}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button disabled={pending} type="submit">Send</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

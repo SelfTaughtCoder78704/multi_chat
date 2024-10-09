@@ -1,5 +1,5 @@
 import { v } from "convex/values"; // Importing value validation utility
-import { internalMutation, internalQuery } from "./_generated/server"; // Importing internal mutation and query functions
+import { internalMutation, internalQuery, query } from "./_generated/server"; // Importing internal mutation and query functions
 import { UserJSON } from "@clerk/nextjs/server";
 
 export const create = internalMutation({
@@ -48,5 +48,15 @@ export const updateOrCreateUser = internalMutation({
         email: clerkUser.email_addresses[0].email_address
       });
     }
+  },
+});
+
+
+export const listAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    // Grab all users
+    const users = ctx.db.query("users").collect();
+    return users;
   },
 });

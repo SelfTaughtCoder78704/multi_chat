@@ -44,6 +44,7 @@ const handleClerkWebhook = httpAction(
         break;
 
       case 'organizationMembership.created':
+      case 'organizationMembership.updated':
         console.log('Creating organization', event.data.id); // Log organization creation
         const user = await ctx.runQuery(internal.user.get, {
           clerkId: event.data.public_user_data.user_id

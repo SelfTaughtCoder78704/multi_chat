@@ -16,5 +16,13 @@ export default defineSchema({
     receiver: v.string(), // Define 'receiver' field as a string
   })
   .index('by_receiver', ['receiver']) // Create an index on the 'receiver' field for efficient querying
-  .index('by_reciever_sender', ['receiver', 'sender']) // Create a composite index on 'receiver' and 'sender' for efficient querying
+  .index('by_reciever_sender', ['receiver', 'sender']), // Create a composite index on 'receiver' and 'sender' for efficient querying
+
+  organizations: defineTable({
+    organizationId: v.string(), // Define 'organizationId' field as a string
+    name: v.string(), // Define 'name' field as a string
+    members: v.optional(v.array(v.id('users'))), // Define 'members' field as an optional array of user IDs
+  })
+  .index('by_organizationId', ['organizationId']) // Create an index on the 'organizationId' field for efficient querying
+  .index('by_members', ['members']) // Create an index on the 'members' field for efficient querying
 });

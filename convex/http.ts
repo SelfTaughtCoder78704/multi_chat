@@ -3,6 +3,7 @@ import { httpAction } from "./_generated/server"; // Importing httpAction to def
 import { Webhook } from "svix"; // Importing Webhook from svix for webhook verification
 import { internal } from "./_generated/api"; // Importing internal API for database operations
 import { WebhookEvent } from "@clerk/nextjs/server"; // Importing WebhookEvent type from Clerk
+import { Id } from "./_generated/dataModel";
 
 const validatePayload = async (
   req: Request
@@ -39,6 +40,19 @@ const handleClerkWebhook = httpAction(
         console.log('Creating/updating user', event.data.id); // Log user creation/update
         await ctx.runMutation(internal.user.updateOrCreateUser, {
           clerkUser: event.data
+        });
+        break;
+
+      case 'organizationMembership.created':
+        console.log('Creating organization', event.data.id); // Log organization creation
+        const user = await ctx.runQuery(internal.user.get, {
+          clerkId: event.data.public_user_data.user_id
+        });
+        await ctx.runMutation(internal.organizations.createOrUpdateOrganization, {
+          organizationId: event.data.id,
+          name: event.data.organization.name,
+          members: [user?._id as Id<'users'>],
+          clerkId: event.data.public_user_data.user_id
         });
         break;
       default: {

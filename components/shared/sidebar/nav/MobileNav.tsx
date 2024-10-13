@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { useConversation } from "@/hooks/useConversation";
 import { ThemeToggle } from "../../theme/theme-toggle";
 import { Badge } from "@/components/ui/badge";
+import { useOrganization } from "@clerk/nextjs";
 
 const MobileNav = () => {
   const paths = useNavigation();
   const { isActive } = useConversation();
-
+  const { organization } = useOrganization();
   if (isActive) return null;
   return (
     <Card className="fixed bottom-4 w-[calc(100vw-32px)] flex items-center h-16 p-2 lg:hidden">
@@ -42,6 +43,7 @@ const MobileNav = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{path.name}</p>
+                    {organization && <p>Current: {organization.name}</p>}
                   </TooltipContent>
                 </Tooltip>
               </Link>

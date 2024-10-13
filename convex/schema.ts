@@ -7,6 +7,7 @@ export default defineSchema({
     imageUrl: v.string(), // Define 'imageUrl' field as a string
     clerkId: v.string(), // Define 'clerkId' field as a string
     email: v.string(), // Define 'email' field as a string
+    currentOrganization: v.optional(v.string()), // Define 'currentOrganization' field as an optional string
   })
   .index('by_email', ['email']) // Create an index on the 'email' field for efficient querying
   .index('by_clerkId', ['clerkId']), // Create an index on the 'clerkId' field for efficient querying

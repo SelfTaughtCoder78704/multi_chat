@@ -1,5 +1,5 @@
 import { v } from "convex/values"; // Importing value validation utility
-import { internalMutation, internalQuery, query } from "./_generated/server"; // Importing internal mutation and query functions
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server"; // Importing internal mutation and query functions
 import { UserJSON } from "@clerk/nextjs/server";
 
 export const create = internalMutation({
@@ -8,6 +8,7 @@ export const create = internalMutation({
     imageUrl: v.string(), // Expecting an 'imageUrl' argument of type string
     clerkId: v.string(), // Expecting a 'clerkId' argument of type string
     email: v.string(), // Expecting an 'email' argument of type string
+    currentOrganization: v.optional(v.string()), // Expecting a 'currentOrganization' argument of type string
   },
   handler: async (ctx, args) => {
     await ctx.db.insert('users', args); // Insert a new user into the 'users' collection with the provided arguments
@@ -51,6 +52,24 @@ export const updateOrCreateUser = internalMutation({
   },
 });
 
+export const updateCurrentOrganization = mutation({
+  args: {
+    clerkId: v.string(),
+    organizationId: v.string(),
+  },
+  async handler(ctx, { clerkId, organizationId }) {
+    const userRecord = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (userRecord) {
+      await ctx.db.patch(userRecord._id, {
+        currentOrganization: organizationId,
+      });
+    }
+  },
+});
 
 export const listAllUsers = query({
   args: {},

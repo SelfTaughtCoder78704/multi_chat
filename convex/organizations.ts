@@ -5,47 +5,49 @@ import { Id } from "./_generated/dataModel";
 
 
 
-
-
-
-export const createOrUpdateOrganization = internalMutation({
+export const getOrganizationById = internalQuery({
   args: {
-    organizationId: v.string(), // Expecting an argument 'organizationId' of type string
-    name: v.string(), // Expecting an argument 'name' of type string
-    members: v.array(v.id('users')), // Expecting an argument 'members' of type array of user IDs
-    clerkId: v.string()
+    organizationId: v.string()
   },
   handler: async (ctx, args) => {
-    const currentUser = await getUserByClerkId({ ctx, clerkId: args.clerkId }); // Get the current user from the database
-    console.log("Organizations Current User:", currentUser);
-
-    if (!currentUser) {
-      throw new ConvexError("User not found"); // Throw error if current user is not found
-    }
-    console.log("Args:", args);
-    // const organization = await ctx.db.query("organizations").withIndex("by_organizationId", (q) => q.eq("organizationId", args.organizationId)).unique();
-    // console.log("Organizations Organization:", organization);
-
     const organization = await ctx.db.query("organizations").withIndex("by_organizationId", (q) => q.eq("organizationId", args.organizationId)).unique();
-    console.log("Organizations Organization:", organization);
-    if (organization === null) {
-      await ctx.db.insert("organizations", {
-        organizationId: args.organizationId, // Set the organization ID
-        name: args.name, // Set the organization name
-        members: args.members as Id<'users'>[] // Add the current user as a member
-      });
-    } else {
-      // Append new members to the existing members array
-      const updatedMembers = [...(organization.members  || []), ...args.members];
-      await ctx.db.patch(organization._id , {
-        name: args.name,
-        members: updatedMembers
-      });
-    }
-
-    return organization; // Return the created or updated organization
+    return organization;
   }
-});
+})
+
+export const createOrganization = internalMutation({
+  args: {
+    organizationId: v.string(),
+    name: v.string()
+  },
+  handler: async (ctx, args) => {
+    const organization = await ctx.db.insert("organizations", {
+      organizationId: args.organizationId,
+      name: args.name
+    });
+    return organization;
+  }
+})
+
+
+export const updateOrganizationMembers = internalMutation({
+  args: {
+    organizationId: v.string(),
+    members: v.array(v.id('users'))
+  },
+  handler: async (ctx, args) => {
+    const organization = await getOrganizationById(ctx, { organizationId: args.organizationId });
+    if (!organization) {
+      throw new ConvexError("Organization not found");
+    }
+    const updatedMembers = [...(organization.members || []), ...args.members as Id<'users'>[]];
+    await ctx.db.patch(organization._id, {
+      organizationId: args.organizationId,
+      members: updatedMembers
+    });
+    return organization;
+  }
+})
 
 
 export const listOrganizationsOfUser = query({
@@ -53,13 +55,24 @@ export const listOrganizationsOfUser = query({
     memberId: v.string()
   },
   handler: async (ctx, args) => {
-    const currentUser = await getUserByClerkId({ ctx, clerkId: args.memberId});
+    const currentUser = await getUserByClerkId({ ctx, clerkId: args.memberId });
+    console.log("currentUser", currentUser);
     if (!currentUser) {
       throw new ConvexError("User not found");
     }
-    const organizations = await ctx.db.query("organizations").withIndex("by_members", (q) => q.eq("members", [currentUser._id])).collect();
-    return organizations;
+    const organizations = await ctx.db.query("organizations")
+      .collect();
+
+      const foundUserOrgs = organizations.map(org => {
+        if (org.members?.includes(currentUser._id)) {
+          return org;
+        } 
+      })
+
+    console.log("organizations", organizations);
+    return foundUserOrgs;
   }
 })
+
 
 

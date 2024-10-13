@@ -43,17 +43,22 @@ const handleClerkWebhook = httpAction(
         });
         break;
 
+      case 'organization.created':
+        console.log('Creating organization', event.data.id); // Log organization creation
+        await ctx.runMutation(internal.organizations.createOrganization, {
+          organizationId: event.data.id,
+          name: event.data.name
+        });
+        break;
+
       case 'organizationMembership.created':
       case 'organizationMembership.updated':
-        console.log('Creating organization', event.data.id); // Log organization creation
-        const user = await ctx.runQuery(internal.user.get, {
+        const userId = await ctx.runQuery(internal.user.get, {
           clerkId: event.data.public_user_data.user_id
         });
-        await ctx.runMutation(internal.organizations.createOrUpdateOrganization, {
-          organizationId: event.data.id,
-          name: event.data.organization.name,
-          members: [user?._id as Id<'users'>],
-          clerkId: event.data.public_user_data.user_id
+        await ctx.runMutation(internal.organizations.updateOrganizationMembers, {
+          organizationId: event.data.organization.id,
+          members: [userId?._id as Id<'users'>]
         });
         break;
       default: {

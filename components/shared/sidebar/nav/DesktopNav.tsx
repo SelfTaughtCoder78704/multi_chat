@@ -70,7 +70,7 @@ const DesktopNav = () => {
       </nav>
       <div className="flex flex-col items-center gap-4">
         <ThemeToggle />
-        <UserButton />
+        {/* <UserButton /> */}
         <OrganizationSwitcher>
       {/* You can pass the content as a component */}
       <OrganizationSwitcher.OrganizationProfilePage

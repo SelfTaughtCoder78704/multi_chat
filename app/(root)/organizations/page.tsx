@@ -2,46 +2,59 @@
 
 import { useRouter } from 'next/navigation';
 import { useOrganizationList } from "@clerk/nextjs";
-import { Button } from '@/components/ui/button';
-import { useUser } from '@clerk/nextjs';
-import { useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import ItemList from "@/components/shared/items-list/ItemList";
+import ConversationFallback from "@/components/shared/conversation/ConversationFallback";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 
 export default function OrganizationListPage() {
-  const { user } = useUser();
   const router = useRouter();
-  const { isLoaded, setActive, userMemberships } = useOrganizationList({
+  const { isLoaded, userMemberships } = useOrganizationList({
     userMemberships: {
       infinite: true,
     },
   });
 
-  const updateCurrentOrganization = useMutation(api.user.updateCurrentOrganization);
-
   if (!isLoaded) {
     return <>Loading</>;
   }
-  
-  const handleOrgSelect = async (selectedOrgId: string) => {
-    await setActive({ organization: selectedOrgId });
-    if (user) {
-      await updateCurrentOrganization({ clerkId: user.id, organizationId: selectedOrgId });
-    }
+
+  const handleOrgSelect = (selectedOrgId: string) => {
     router.push(`/organizations/${selectedOrgId}`);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen w-full">
-      <ul>
-        {userMemberships.data?.map((mem) => (
-          <li key={mem.id}>
-            <Button onClick={() => handleOrgSelect(mem.organization.id)}>Select {mem.organization.name}</Button>
-          </li>
-        ))}
-      </ul>
+    <>
+      <ItemList title="Your Organizations">
+        {userMemberships.data?.length === 0 ? (
+          <p className="w-full h-full flex items-center justify-center">No Organizations</p>
+        ) : (
+          userMemberships.data?.map((mem) => (
+            <Card 
+              key={mem.id} 
+              className="w-full p-2 flex flex-row items-center justify-between gap-2 cursor-pointer" 
+              onClick={() => handleOrgSelect(mem.organization.id)}
+            >
+              <div className="flex items-center gap-4 truncate">
+                <Avatar>
+                  <AvatarImage src={mem.organization.imageUrl} />
+                  <AvatarFallback>
+                    <User />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col truncate">
+                  <h4 className="truncate">{mem.organization.name}</h4>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+      </ItemList>
+      <ConversationFallback />
       <button disabled={!userMemberships.hasNextPage} onClick={() => userMemberships.fetchNext()}>
         Load more
       </button>
-    </div>
+    </>
   );
 }

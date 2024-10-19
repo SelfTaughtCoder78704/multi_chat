@@ -79,3 +79,13 @@ export const listAllUsers = query({
     return users;
   },
 });
+
+
+export const currentUser = query({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, { clerkId }) => {
+    return ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique();
+  }
+});

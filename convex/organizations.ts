@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values"; // Importing ConvexError for error handling and v for value validation
-import { internalMutation, internalQuery, query } from "./_generated/server"; // Importing internalMutation to define a server-side mutation
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server"; // Importing internalMutation to define a server-side mutation
 import { getUserByClerkId } from "./_utils"; // Importing a utility function to get user by Clerk ID
 import { Id } from "./_generated/dataModel";
 
@@ -75,4 +75,19 @@ export const listOrganizationsOfUser = query({
 })
 
 
-
+// update current organization for user
+export const updateCurrentOrganization = mutation({
+  args: {
+    clerkId: v.string(),
+    organizationId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const user = await getUserByClerkId({ ctx, clerkId: args.clerkId });
+    if (!user) {
+      throw new ConvexError("User not found");
+    }
+    await ctx.db.patch(user._id, {
+      currentOrganization: args.organizationId
+    })
+  }
+})

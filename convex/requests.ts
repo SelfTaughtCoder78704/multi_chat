@@ -16,6 +16,17 @@ export const get = query({
     if (!currentUser) {
       throw new ConvexError("User not found");
     }
+    let currentOrganization;
+    if (currentUser.currentOrganization) {
+      currentOrganization = await ctx.db.query("organizations").withIndex("by_organizationId", (q) => q.eq("organizationId", currentUser.currentOrganization!)).unique();
+    }
+
+    if (!currentOrganization) {
+      throw new ConvexError("Current organization not found");
+    }
+
+    
+
     const requests = await ctx.db.query("requests").withIndex("by_receiver", (q) => q.eq("receiver", currentUser._id)).collect();
     const requestsWithSender = await Promise.all(requests.map(async (request) => {
       const senderId: Id<"users"> = request.sender as Id<"users">; // Cast or ensure the type

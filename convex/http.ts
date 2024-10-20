@@ -36,15 +36,15 @@ const handleClerkWebhook = httpAction(
 
     switch (event.type) {
       case 'user.created':
-      case 'user.updated': // Combine 'user.created' and 'user.updated' cases
-        console.log('Creating/updating user', event.data.id); // Log user creation/update
+      case 'user.updated':
+        console.log('Creating/updating user', event.data.id);
         await ctx.runMutation(internal.user.updateOrCreateUser, {
           clerkUser: event.data
         });
         break;
 
       case 'organization.created':
-        console.log('Creating organization', event.data.id); // Log organization creation
+        console.log('Creating organization', event.data.id);
         await ctx.runMutation(internal.organizations.createOrganization, {
           organizationId: event.data.id,
           name: event.data.name
@@ -56,14 +56,39 @@ const handleClerkWebhook = httpAction(
         const userId = await ctx.runQuery(internal.user.get, {
           clerkId: event.data.public_user_data.user_id
         });
+        
         await ctx.runMutation(internal.organizations.updateOrganizationMembers, {
           organizationId: event.data.organization.id,
           members: [userId?._id as Id<'users'>]
         });
+
+        await ctx.runMutation(internal.user.internalUpdateCurrentOrganization, {
+          userId: userId?._id as Id<'users'>,
+          organizationId: event.data.organization.id
+        });
         break;
-      default: {
-        console.log('Clerk webhook event not supported', event.type); // Log unsupported event types
-      }
+
+      case 'organizationMembership.deleted':
+        const deletedUserId = await ctx.runQuery(internal.user.get, {
+          clerkId: event.data.public_user_data.user_id
+        });
+
+        // Fetch the organization to remove the user from its members
+        const organization = await ctx.runQuery(internal.organizations.getOrganizationById, {
+          organizationId: event.data.organization.id
+        });
+
+        if (organization) {
+          const updatedMembers = organization.members?.filter(memberId => memberId !== deletedUserId?._id) || [];
+          await ctx.runMutation(internal.organizations.updateOrganizationMembers, {
+            organizationId: event.data.organization.id,
+            members: updatedMembers
+          });
+        }
+        break;
+
+      default:
+        console.log('Clerk webhook event not supported', event.type);
     }
     return new Response(null, { status: 200 }); // Respond with 200 OK
   }

@@ -8,27 +8,30 @@ export const get = query({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    console.log(identity);
     if (!identity) {
       throw new ConvexError("Unauthorized");
     }
-    const currentUser = await getUserByClerkId({ctx, clerkId: identity.subject});
+    const currentUser = await getUserByClerkId({ ctx, clerkId: identity.subject });
     if (!currentUser) {
       throw new ConvexError("User not found");
     }
+
     let currentOrganization;
     if (currentUser.currentOrganization) {
       currentOrganization = await ctx.db.query("organizations").withIndex("by_organizationId", (q) => q.eq("organizationId", currentUser.currentOrganization!)).unique();
     }
-
     if (!currentOrganization) {
       throw new ConvexError("Current organization not found");
     }
 
-    
+    const requests = await ctx.db.query("requests")
+      .withIndex("by_receiver", (q) => q.eq("receiver", currentUser._id))
+      .collect();
 
-    const requests = await ctx.db.query("requests").withIndex("by_receiver", (q) => q.eq("receiver", currentUser._id)).collect();
-    const requestsWithSender = await Promise.all(requests.map(async (request) => {
+    // Filter requests to only include those from the current organization
+    const filteredRequests = requests.filter(request => request.organizationId === currentOrganization._id);
+
+    const requestsWithSender = await Promise.all(filteredRequests.map(async (request) => {
       const senderId: Id<"users"> = request.sender as Id<"users">; // Cast or ensure the type
       const sender = await ctx.db.get(senderId);
       
@@ -43,7 +46,6 @@ export const get = query({
     return requestsWithSender;
   }
 });
-
 
 export const count = query({
   args: {},
@@ -64,11 +66,23 @@ export const count = query({
       throw new ConvexError("User not found");
     }
 
+    let currentOrganization;
+    if (currentUser.currentOrganization) {
+      currentOrganization = await ctx.db.query("organizations").withIndex("by_organizationId", (q) => q.eq("organizationId", currentUser.currentOrganization!)).unique();
+    }
+
+    if (!currentOrganization) {
+      currentOrganization = null;
+    }
+
     const requests = await ctx.db
       .query("requests")
       .withIndex("by_receiver", (q) => q.eq("receiver", currentUser._id))
       .collect();
 
-    return requests.length;
+    // Count only the requests that belong to the current organization
+    const filteredRequests = requests.filter(request => request.organizationId === currentOrganization._id);
+
+    return filteredRequests.length; // Return the count of filtered requests
   },
 });

@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigation } from "@/hooks/useNavigation";
 import { Card } from "@/components/ui/card";
-import { UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import {
   Tooltip,
@@ -51,6 +51,7 @@ const DesktopNav = () => {
       <div className="flex flex-col items-center gap-4">
         <ThemeToggle />
         <UserButton />
+ 
       </div>
     </Card>
   );

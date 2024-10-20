@@ -60,6 +60,7 @@ export const create = mutation({
     const request = await ctx.db.insert("requests", {
       sender: currentUser._id, // Set current user as sender
       receiver: receiver._id, // Set found user as receiver
+      organizationId: currentOrganization._id, // Set current organization as organizationId
     });
 
     return request; // Return the newly created request

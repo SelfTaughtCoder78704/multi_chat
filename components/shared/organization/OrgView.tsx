@@ -1,6 +1,6 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { OrganizationProfile, useOrganizationList } from "@clerk/nextjs";
+import { useOrganizationList } from "@clerk/nextjs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User } from "lucide-react";
 import { OrganizationResource } from "@clerk/types";
@@ -22,7 +22,9 @@ const OrgView = ({
 
   console.log(userMemberships);
   // find the imageUrl and name of the current organization
-  const currentOrganization = userMemberships.data?.find((mem) => mem.organization.id === userData?.currentOrganization);
+  const currentOrganization = userMemberships.data?.find(
+    (mem) => mem.organization.id === userData?.currentOrganization
+  );
 
   if (!isLoaded) {
     return <p>Loading...</p>;
@@ -44,15 +46,16 @@ const OrgView = ({
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col truncate">
-            <h4 className="truncate">{currentOrganization?.organization.name}</h4>
+            <h4 className="truncate">
+              {currentOrganization?.organization.name}
+            </h4>
           </div>
         </div>
-        <OrganizationProfile />
+        {/* <OrganizationProfile /> */}
+        <p>Members:</p>
       </Card>
     );
   }
-
-  
 
   return (
     <Card className="hidden lg:flex h-full w-full p-2 items-center justify-center bg-secondary text-secondary-foreground">
@@ -67,7 +70,8 @@ const OrgView = ({
           <h4 className="truncate">{organization?.name}</h4>
         </div>
       </div>
-      <OrganizationProfile />
+      {/* <OrganizationProfile /> */}
+      <p>Members:</p>
     </Card>
   );
 };

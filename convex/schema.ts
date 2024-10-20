@@ -15,6 +15,7 @@ export default defineSchema({
   requests: defineTable({
     sender: v.string(), // Define 'sender' field as a string
     receiver: v.string(), // Define 'receiver' field as a string
+    organizationId: v.string(), // Define 'organizationId' field as a string
   })
   .index('by_receiver', ['receiver']) // Create an index on the 'receiver' field for efficient querying
   .index('by_reciever_sender', ['receiver', 'sender']), // Create a composite index on 'receiver' and 'sender' for efficient querying

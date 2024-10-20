@@ -71,6 +71,18 @@ export const updateCurrentOrganization = mutation({
   },
 });
 
+export const internalUpdateCurrentOrganization = internalMutation({
+  args: {
+    userId: v.id('users'),
+    organizationId: v.string(),
+  },
+  handler: async (ctx, { userId, organizationId }) => {
+    await ctx.db.patch(userId, {
+      currentOrganization: organizationId,
+    });
+  },
+});
+
 export const listAllUsers = query({
   args: {},
   handler: async (ctx) => {

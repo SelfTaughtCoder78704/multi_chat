@@ -7,25 +7,25 @@ const isPublicRoute = createRouteMatcher(['/api/uploadthing']);
 const redirectToOrgs = (activeOrganization: boolean, req: NextRequest) => {
   if (!activeOrganization) {
     console.log('Redirecting to organizations');
-    return NextResponse.redirect(new URL('/organizations', req.url));
+    return NextResponse.redirect(new URL('/waiting-room', req.url));
   }
 }
 
 export default clerkMiddleware(( auth, req ) => {
   if (isPublicRoute(req)) return;
   if (isProtectedRoute(req)) auth().protect();
-  // const {orgRole} = auth();
-  // const activeOrganization = !!orgRole;
+  const {orgRole} = auth();
+  const activeOrganization = !!orgRole;
 
-  // if (!activeOrganization) {
-  //   console.log('No active organization');
-  //   // Check if the current URL is not already '/organizations'
-  //   // if (!req.url.includes('/organizations')) {
-  //   //   return redirectToOrgs(activeOrganization, req);
-  //   // }
-  // } else {
-  //   console.log('Active organization:', orgRole);
-  // }
+  if (!activeOrganization) {
+    console.log('No active organization');
+    // Check if the current URL is not already '/organizations'
+    if (!req.url.includes('/waiting-room')) {
+      return redirectToOrgs(activeOrganization, req);
+    }
+  } else {
+    console.log('Active organization:', orgRole);
+  }
 })
 
 export const config = {

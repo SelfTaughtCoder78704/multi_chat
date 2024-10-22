@@ -10,7 +10,8 @@ export default defineSchema({
     currentOrganization: v.optional(v.string()), // Define 'currentOrganization' field as an optional string
   })
   .index('by_email', ['email']) // Create an index on the 'email' field for efficient querying
-  .index('by_clerkId', ['clerkId']), // Create an index on the 'clerkId' field for efficient querying
+  .index('by_clerkId', ['clerkId']) // Create an index on the 'clerkId' field for efficient querying
+  .index('by_currentOrganization', ['currentOrganization']), // Create an index on the 'currentOrganization' field for efficient querying
 
   requests: defineTable({
     sender: v.string(), // Define 'sender' field as a string

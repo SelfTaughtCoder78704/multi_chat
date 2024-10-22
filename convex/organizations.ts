@@ -49,6 +49,30 @@ export const updateOrganizationMembers = internalMutation({
   }
 })
 
+export const deleteOrganization = internalMutation({
+  args: {
+    organizationId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const organization = await ctx.db.query("organizations")
+      .withIndex("by_organizationId", q => q.eq("organizationId", args.organizationId))
+      .unique();
+    
+    if (!organization) {
+      throw new ConvexError("Organization not found");
+    }
+
+    await ctx.db.delete(organization._id);
+
+    // find the users with the current org id and update the current org to null
+    const users = await ctx.db.query("users").withIndex("by_currentOrganization", q => q.eq("currentOrganization", args.organizationId)).collect();
+    for (const user of users) {
+      await ctx.db.patch(user._id, {
+        currentOrganization: undefined
+      });
+    }
+  }
+})
 
 export const listOrganizationsOfUser = query({
   args: {

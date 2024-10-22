@@ -50,6 +50,12 @@ const handleClerkWebhook = httpAction(
           name: event.data.name
         });
         break;
+      
+      case 'organization.deleted':
+        await ctx.runMutation(internal.organizations.deleteOrganization, {
+          organizationId: event.data.id as string
+        });
+        break;
 
       case 'organizationMembership.created':
       case 'organizationMembership.updated':
